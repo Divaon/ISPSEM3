@@ -3,6 +3,7 @@ using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
@@ -41,8 +42,7 @@ namespace ISPLAB2
             }
         }
 
-
-        class Configuration
+        public class Configuration
         {
             public string catalog0 { get; set; }
             public string catalog1 { get; set; }
@@ -51,57 +51,80 @@ namespace ISPLAB2
             public string catalog4 { get; set; }
         }
 
-        static async Task Main(string[] args)
+
+
+
+
+
+
+
+       static Configuration GetOption(string conf)
         {
-            Configuration catalog=new Configuration();
-            Random rnd = new Random();
-            int choose = rnd.Next(0, 1);
-
-
-
-            if (choose == 0)
+            Configuration catalog = new Configuration();
+            foreach (string findedfile in Directory.EnumerateFiles(conf, "*.*", SearchOption.AllDirectories))
             {
-                XmlDocument xDoc = new XmlDocument();
-                xDoc.Load(@"E:\sourcecat\conf\XMLFile1.xml");
-                XmlElement xRoot = xDoc.DocumentElement;
-                XmlNodeList childnodes = xRoot.SelectNodes("*");
-                foreach (XmlNode n in childnodes)
+                FileInfo FI;
+                try
                 {
-                    if (n.Name == "catalog0")
+                    FI = new FileInfo(findedfile);      
+                    if (FI.Extension == ".xml")
                     {
-                        catalog.catalog0 = n.InnerText;
+                        XmlDocument xDoc = new XmlDocument();
+                        xDoc.Load(FI.FullName);
+                        XmlElement xRoot = xDoc.DocumentElement;
+                        XmlNodeList childnodes = xRoot.SelectNodes("*");
+                        foreach (XmlNode n in childnodes)
+                        {
+                            if (n.Name == "catalog0")
+                            {
+                                catalog.catalog0 = n.InnerText;
+                            }
+                            if (n.Name == "catalog1")
+                            {
+                                catalog.catalog1 = n.InnerText;
+                            }
+                            if (n.Name == "catalog2")
+                            {
+                                catalog.catalog2 = n.InnerText;
+                            }
+                            if (n.Name == "catalog3")
+                            {
+                                catalog.catalog3 = n.InnerText;
+                            }
+                            if (n.Name == "sdvig")
+                            {
+                                catalog.catalog4 = n.InnerText;
+                            }
+                        }
+                        return catalog;
                     }
-                    if (n.Name == "catalog1")
+                    if (FI.Extension == ".json")
                     {
-                        catalog.catalog1 = n.InnerText;
-                    }
-                    if (n.Name == "catalog2")
-                    {
-                        catalog.catalog2 = n.InnerText;
-                    }
-                    if (n.Name == "catalog3")
-                    {
-                        catalog.catalog3 = n.InnerText;
-                    }
-                    if (n.Name == "sdvig")
-                    {
-                        catalog.catalog4 = n.InnerText;
+                        string jsonString = File.ReadAllText(FI.FullName);
+                        catalog = JsonSerializer.Deserialize<Configuration>(jsonString);
+                        return catalog;
                     }
                 }
-            }
-            if (choose == 1)
-            {
-                using (FileStream fs = new FileStream("E:\\sourcecat\\conf\\json1.json", FileMode.OpenOrCreate))
+                catch
                 {
-                    catalog = await JsonSerializer.DeserializeAsync<Configuration>(fs);
+                    continue;
+
                 }
+
             }
+            Console.WriteLine("Конфигурационный файл не найден");
+            Console.ReadKey();
+            return null;
+        }
+
+        static  Task Main(string[] args)
+        {
+            Configuration catalog = new Configuration();
+            string conf = @"E:\sourcecat\conf";
+            catalog = GetOption(conf);
             string filename = "*.*";
-             int sdvid = Convert.ToInt32(catalog.catalog4);
+            int sdvid = Convert.ToInt32(catalog.catalog4);
             DateTime date = new DateTime(1, 1, 1);
-
-            Console.WriteLine(catalog.catalog0+" "+ catalog.catalog1 + " " + catalog.catalog2 + " " + catalog.catalog3 + " " + catalog.catalog4 + " " );
-
             while (true)
             {
 
@@ -132,27 +155,29 @@ namespace ISPLAB2
 
                             }
                             string[] words = FI.FullName.Split(new char[] { '\\' });
-
-                            if (words.Length != 8)
-                                break;
-
-                            int n1 = dates(words[4], 1900, 2100);
-                            int n2 = dates(words[5], 1, 12);
-                            int n3 = dates(words[6], 1, 30);
+                            int length = words.Length;
+                            int n1 = dates(words[length - 4], 1900, 2100);
+                            int n2 = dates(words[length - 3], 1, 12);
+                            int n3 = dates(words[length - 2], 1, 30);
                             string[] checkfilename = FI.Name.Split(new char[] { '_' });
-                            if (checkfilename.Length != 7)
-                                break;
+                            int[] dd = new int[6]; ;
+                            dd[0] = Convert.ToInt32(checkfilename[1]);
+                            dd[2] = Convert.ToInt32(checkfilename[1]);
+                            dd[4] = Convert.ToInt32(checkfilename[1]);
+                            dd[1] = Convert.ToInt32(words[length - 4]);
+                            dd[3] = Convert.ToInt32(words[length - 4]);
+                            dd[5] = Convert.ToInt32(words[length - 4]);
 
-                            if (checkfilename[1] != words[4] || checkfilename[2] != words[5] || checkfilename[3] != words[6])
+                            if (dd[0] != dd[1] || dd[2] != dd[3] || dd[4] != dd[5])
                                 break;
                             int n7 = dates(checkfilename[4], 0, 23);
                             int n8 = dates(checkfilename[5], 0, 59);
                             string[] sec = checkfilename[6].Split(new char[] { '.' });
                             int n9 = dates(sec[0], 0, 59);
+
                             if (n1 == 0 || n2 == 0 || n3 == 0 || n7 == 0 || n8 == 0 || n9 == 0)
                                 break;
-
-                            string arh = Path.Combine(catalog.catalog1 + '\\' + words[7]);
+                            string arh = Path.Combine(catalog.catalog1 + '\\' + words[length - 1]);
                             File.Copy(FI.FullName, arh, true);
                             string text2 = new string(text);
                             File.WriteAllText(arh, text2);
@@ -169,12 +194,11 @@ namespace ISPLAB2
 
 
                             }
-                            Console.WriteLine(arh);
                             string[] finishfilename = arh.Split(new char[] { '\\' });
-                          
-                            string fin = Path.Combine(catalog.catalog2 + '\\' + words[4] + '\\' + words[5] + '\\' + words[6]);
+                            string fin = Path.Combine(catalog.catalog2 + '\\' + words[length - 4] + '\\' + words[length - 3] + '\\' + words[length - 2]);
+                            length = finishfilename.Length;
                             System.IO.Directory.CreateDirectory(fin);
-                            string fin2 = Path.Combine(fin + '\\' + finishfilename[4]);
+                            string fin2 = Path.Combine(fin + '\\' + finishfilename[length - 1]);
                             File.Copy(arh, fin2, true);
                             string text3 = new string(text);
                             File.WriteAllText(fin2, text3);
