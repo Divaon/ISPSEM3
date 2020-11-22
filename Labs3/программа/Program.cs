@@ -8,6 +8,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 
+//прототип
+
 namespace ISPLAB2
 {
     class Program
