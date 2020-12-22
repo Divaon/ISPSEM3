@@ -1,0 +1,7 @@
+﻿<?xml version="1.0"?>
+<DataOptions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <ConnectionPath>Data Source=DESKTOP-D1UV9QM;Initial Catalog=AdventureWorks2019;Integrated Security=True</ConnectionPath>
+  <SourcePath>E:\\sourcecat\\confvr</SourcePath>
+  <TargetPath>E:\\sourcecat\\conf</TargetPath>
+  <LoggerConnectionPath>Data Source=DESKTOP-D1UV9QM;Initial Catalog=ApplicationInsights;Integrated Security=True</LoggerConnectionPath>
+</DataOptions>
